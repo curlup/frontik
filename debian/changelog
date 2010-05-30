@@ -1,3 +1,9 @@
+frontik (0.19.7fix4) unstable; urgency=low
+
+  * remove __del__ method from PageHandler to prevent possible memory leak
+
+ -- Andrey Tatarinov <a.tatarinov@hh.ru>  Sun, 30 May 2010 21:23:09 +0400
+
 frontik (0.19.7fix3) unstable; urgency=low
 
   * dependency from tornado >= 0.2~hh17
