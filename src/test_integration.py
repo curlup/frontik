@@ -31,7 +31,7 @@ def stop_worker(port):
         pass
 
 def get_page(port, page, xsl=False):
-    data = urllib2.urlopen('http://localhost:%s/page/%s/%s' % (port, page, "?noxsl=true" if not xsl else "" ))
+    data = urllib2.urlopen('http://localhost:%s/frontik_www/%s/%s' % (port, page, "?noxsl=true" if not xsl else "" ))
     
     return data
 
@@ -148,7 +148,7 @@ def test_root_node_frontik_attribute():
 
 def test_fib0():
     with frontik_server() as srv_port:
-        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/page/fib/?port={0}&n=0'.format(srv_port)).read())
+        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/frontik_www/fib/?port={0}&n=0'.format(srv_port)).read())
         # 0 1 2 3 4 5 6
         # 1 1 2 3 5 8 13
         assert(int(xml.text) == 1)
@@ -156,7 +156,7 @@ def test_fib0():
 
 def test_fib2():
     with frontik_server() as srv_port:
-        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/page/fib/?port={0}&n=2'.format(srv_port)).read())
+        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/frontik_www/fib/?port={0}&n=2'.format(srv_port)).read())
         # 0 1 2 3 4 5 6
         # 1 1 2 3 5 8 13
         assert(int(xml.text) == 2)
@@ -164,7 +164,7 @@ def test_fib2():
 
 def test_fib6():
     with frontik_server() as srv_port:
-        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/page/fib/?port={0}&n=6'.format(srv_port)).read())
+        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/frontik_www/fib/?port={0}&n=6'.format(srv_port)).read())
         # 0 1 2 3 4 5 6
         # 1 1 2 3 5 8 13
         assert(int(xml.text) == 13)
@@ -172,11 +172,20 @@ def test_fib6():
 
 def test_timeout():
     with frontik_server() as srv_port:
-        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/page/long_page_request/?port={0}'.format(srv_port)).read())
+        xml = etree.fromstring(urllib2.urlopen('http://localhost:{0}/frontik_www/long_page_request/?port={0}'.format(srv_port)).read())
 
         assert(xml.text == 'error')
 
         time.sleep(2)
+
+
+def test_multi_app():
+    with frontik_server() as srv_port:
+        a = etree.fromstring(urllib2.urlopen('http://localhost:{0}/a/hello/'.format(srv_port)).read())
+        b = etree.fromstring(urllib2.urlopen('http://localhost:{0}/b/hello/'.format(srv_port)).read())
+
+        assert (a.text == 'Hello from a!')
+        assert (b.text == 'Hello from b!')
 
 if __name__ == '__main__':
     nose.main()
