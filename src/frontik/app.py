@@ -65,8 +65,9 @@ def _init_app_package(app_dir, app_package_name):
 
 
 class _FrontikApp(object):
-    def __init__(self, package, ph_globals):
-        self.package = package
+    def __init__(self, url_prefix, package_name, ph_globals):
+        self.url_prefix = url_prefix
+        self.package_name = package_name
         self.ph_globals = ph_globals
 
 
@@ -78,30 +79,33 @@ class FrontikModuleDispatcher(object):
 
         self.app_packages = dict()
 
-        for app_path in applications:
+        for (url_prefix, app_path) in applications:
             app_dir = os.path.dirname(app_path)
             app_package_name = os.path.basename(app_path)
 
             app_package = _init_app_package(app_dir, app_package_name)
 
-            self.app_packages[app_package_name] = _FrontikApp(app_package, handler.PageHandlerGlobals(app_package))
+            self.app_packages[url_prefix] = _FrontikApp(url_prefix, app_package_name, handler.PageHandlerGlobals(app_package))
 
     def pages_dispatcher(self, application, request):
         log.info('requested url: %s', request.uri)
 
         request_split = request.path.strip('/').split('/') # [app_name, *module_parts]
 
-        app_package_name = request_split[0]
+        url_prefix = request_split[0]
         page_module_name_parts = request_split[1:]
 
-        if not app_package_name in self.app_packages:
-            log.warn('invalid app name requested: %s', app_package_name)
+        if not url_prefix in self.app_packages:
+            log.warn('invalid url prefix requested: %s', url_prefix)
             return tornado.web.ErrorHandler(application, request, 404)
 
+        app = self.app_packages[url_prefix]
+
         if page_module_name_parts:
-            page_module_name = '{0}.pages.{1}'.format(app_package_name, '.'.join(page_module_name_parts))
+            page_module_name = '{0}.pages.{1}'.format(app.package_name,
+                                                      '.'.join(page_module_name_parts))
         else:
-            page_module_name = '{0}.pages'.format(app_package_name)
+            page_module_name = '{0}.pages'.format(app.package_name)
 
         try:
             page_module = __import__(page_module_name, fromlist=['Page'])
@@ -114,7 +118,7 @@ class FrontikModuleDispatcher(object):
             return tornado.web.ErrorHandler(application, request, 500)
 
         try:
-            return page_module.Page(self.app_packages[app_package_name].ph_globals, application, request)
+            return page_module.Page(app.ph_globals, application, request)
         except:
             log.exception('%s.Page class not found', page_module_name)
             return tornado.web.ErrorHandler(application, request, 500)
